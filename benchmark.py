@@ -1,5 +1,6 @@
 import argparse
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -21,8 +22,8 @@ with open(args.config, "r") as f:
 params = config["params"]
 
 df = pd.DataFrame.from_dict(params, orient="index")
-df = df.assign(forward_time=0.0)
-df = df.assign(backward_time=0.0)
+df = df.assign(forward_time="")
+df = df.assign(backward_time="")
 
 context_length = config["context_length"]
 n_warm_up = config["n_warm_up"]
@@ -40,7 +41,13 @@ for size, param_dict in params.items():
         n_steps=n_steps,
         forward_only=forward_only,
     )
-    df.at[size, "forward_time"] = forward_time
-    df.at[size, "backward_time"] = backward_time
+    forward_time = np.array(forward_time)
+    backward_time = np.array(backward_time)
+    df.at[size, "forward_time"] = (
+        f"{forward_time.mean():.4f} ± {forward_time.std():.4f}"
+    )
+    df.at[size, "backward_time"] = (
+        f"{backward_time.mean():.4f} ± {backward_time.std():.4f}"
+    )
 
 df.to_markdown("benchmark.md")

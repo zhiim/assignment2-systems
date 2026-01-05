@@ -46,7 +46,7 @@ def benchmark(
         torch.cuda.synchronize()
 
     # forward pass
-    forward_time = 0.0
+    forward_times = []
     with torch.no_grad():
         for _ in range(n_steps):
             start = timer()
@@ -54,12 +54,12 @@ def benchmark(
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             end = timer()
-            forward_time += end - start
+            forward_times.append(end - start)
 
     # backward pass
     if not forward_only:
         model.trian()
-        backward_time = 0.0
+        backward_times = []
 
         output = model(data)
         loss = output.mean()
@@ -70,6 +70,6 @@ def benchmark(
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             end = timer()
-            backward_time += end - start
+            backward_times.append(end - start)
 
-    return (forward_time / n_steps, backward_time / n_steps)
+    return (forward_times, backward_times)
