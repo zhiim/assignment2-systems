@@ -33,10 +33,14 @@ for size, param_dict in params.items():
     forward_time, backward_time = benchmark(
         context_length=context_length,
         d_model=param_dict["d_model"],
-        d_ff=config["d_ff"],
-        num_layers=config["num_layers"],
-        num_heads=config["num_heads"],
+        d_ff=param_dict["d_ff"],
+        num_layers=param_dict["num_layers"],
+        num_heads=param_dict["num_heads"],
         n_warm_up=n_warm_up,
         n_steps=n_steps,
         forward_only=forward_only,
     )
+    df.at[size, "forward_time"] = forward_time
+    df.at[size, "backward_time"] = backward_time
+
+df.to_markdown("benchmark.md")
