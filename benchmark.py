@@ -21,17 +21,19 @@ with open(args.config, "r") as f:
     config = yaml.load(f, Loader=yaml.Loader)
 params = config["params"]
 
-df = pd.DataFrame.from_dict(params, orient="index")
-df = df.assign(forward_time="")
-df = df.assign(backward_time="")
-
+forward_only = config["forward_only"]
 context_length = config["context_length"]
 n_warm_up = config["n_warm_up"]
 n_steps = config["n_steps"]
 forward_only = config["forward_only"]
 
+df = pd.DataFrame.from_dict(params, orient="index")
+df = df.assign(forward_time="")
+if not forward_only:
+    df = df.assign(backward_time="")
+
 for size, param_dict in params.items():
-    forward_time, backward_time = benchmark(
+    times = benchmark(
         context_length=context_length,
         d_model=param_dict["d_model"],
         d_ff=param_dict["d_ff"],
@@ -41,13 +43,18 @@ for size, param_dict in params.items():
         n_steps=n_steps,
         forward_only=forward_only,
     )
-    forward_time = np.array(forward_time)
-    backward_time = np.array(backward_time)
+    if forward_only:
+        forward_time = np.array(times)
+    else:
+        forward_time = np.array(times[0])
+        backward_time = np.array(times[1])
+
     df.at[size, "forward_time"] = (
         f"{forward_time.mean():.4f} ± {forward_time.std():.4f}"
     )
-    df.at[size, "backward_time"] = (
-        f"{backward_time.mean():.4f} ± {backward_time.std():.4f}"
-    )
+    if not forward_only:
+        df.at[size, "backward_time"] = (
+            f"{backward_time.mean():.4f} ± {backward_time.std():.4f}"
+        )
 
 df.to_markdown("benchmark.md")
