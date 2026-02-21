@@ -63,10 +63,9 @@ def benchmark(
     model.trian()
     backward_times = []
 
-    output = model(data)
-    loss = output.mean()
-
     for _ in range(n_steps):
+        output = model(data)
+        loss = output.mean()
         start = timer()
         loss.backward()
         if torch.cuda.is_available():
