@@ -1,6 +1,7 @@
 from timeit import default_timer as timer
 
 import torch
+import torch.cuda.nvtx as nvtx
 from cs336_basics.modules import Transformer
 
 VOCAB_SIZE = 10000
@@ -40,19 +41,24 @@ def benchmark(
     # warm up
     model.eval()
     with torch.no_grad():
-        for _ in range(n_warm_up):
-            model(data)
+        for i in range(n_warm_up):
+            with nvtx.range(f"Warm-up {i + 1}/{n_warm_up}"):
+                model(data)
+    # 此处等待所有 warm-up 完成，不需要每轮 warm-up 之后都等待
+    # 会破坏流水线导致 warm-up 性能下降
     if torch.cuda.is_available():
         torch.cuda.synchronize()
 
     # forward pass
     forward_times = []
     with torch.no_grad():
-        for _ in range(n_steps):
+        for i in range(n_steps):
             start = timer()
-            model(data)
-            if torch.cuda.is_available():
-                torch.cuda.synchronize()
+            with nvtx.range(f"Forward pass {i + 1}/{n_steps}"):
+                model(data)
+                # 此处等待每轮 forward pass 完成，确保时间测量准确
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
             end = timer()
             forward_times.append(end - start)
 
@@ -63,13 +69,14 @@ def benchmark(
     model.trian()
     backward_times = []
 
-    for _ in range(n_steps):
+    for i in range(n_steps):
         output = model(data)
         loss = output.mean()
         start = timer()
-        loss.backward()
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
+        with nvtx.range(f"Backward pass {i + 1}/{n_steps}"):
+            loss.backward()
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
         end = timer()
         backward_times.append(end - start)
 
