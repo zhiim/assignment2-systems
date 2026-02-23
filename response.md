@@ -38,3 +38,11 @@ with backward:
 | large  |    1280 |  5120 |         36 |        20 | 0.0481 ± 0.0008 | 0.0867 ± 0.0013 |
 | xl     |    1600 |  6400 |         48 |        25 | 0.0814 ± 0.0008 | 0.1682 ± 0.0012 |
 | 2.7B   |    2560 | 10240 |         32 |        32 | 5.7751 ± 0.1712 | 9.4039 ± 0.1047 |
+
+## nsys_profile
+
+(a) Around 5.8s for 2.7B size. Yes, it's same.
+
+(b) `ampere_segemm_128x64_tn` takes the most GPU time. And this kernel is invoked 193 times during a single forward pass. `elementwise_kernel` takes the most GPU time in backward pass.
+
+(c) Elementwise kernels.
