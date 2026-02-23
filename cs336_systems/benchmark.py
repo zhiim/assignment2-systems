@@ -72,6 +72,9 @@ def benchmark(
     for i in range(n_steps):
         output = model(data)
         loss = output.mean()
+        # ensure forward pass is complete before starting backward pass
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
         start = timer()
         with nvtx.range(f"Backward pass {i + 1}/{n_steps}"):
             loss.backward()
