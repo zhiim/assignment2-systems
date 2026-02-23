@@ -66,7 +66,7 @@ def benchmark(
         return forward_times
 
     # backward pass
-    model.trian()
+    model.train()
     backward_times = []
 
     for i in range(n_steps):
